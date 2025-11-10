@@ -1,18 +1,26 @@
 package com.juntix.ui;
 
+import com.juntix.model.PerfilTrabajador;
+import com.juntix.service.IPerfilService;
+import com.juntix.service.PerfilServiceImpl;
+import com.juntix.exception.ServiceException;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 
+import java.util.List;
+
 /**
  * SearchView
- * Vista de búsqueda con paginación simulada.
- * Demuestra estructuras repetitivas (bucle para resultados) y condicionales para paginación.
+ * Vista de búsqueda REAL de trabajadores desde la base de datos.
+ * Usa PerfilServiceImpl → PerfilDAOImpl → MySQL.
  */
 public class SearchView {
     private VBox root;
     private int page = 0;
     private final int pageSize = 5;
+
+    private final IPerfilService perfilService = new PerfilServiceImpl();
 
     public SearchView() {
         construir();
@@ -24,7 +32,7 @@ public class SearchView {
         root.setSpacing(8);
         Label titulo = new Label("Buscar trabajadores por oficio");
         TextField tfTerm = new TextField();
-        tfTerm.setPromptText("Ej. Jardinería");
+        tfTerm.setPromptText("Ej. Plomería, Electricidad...");
         TextField tfLocal = new TextField();
         tfLocal.setPromptText("Localidad (opcional)");
         Button btnBuscar = new Button("Buscar");
@@ -35,32 +43,89 @@ public class SearchView {
 
         btnBuscar.setOnAction(e -> {
             page = 0;
-            realizarBusqueda(tfTerm.getText().trim(), tfLocal.getText().trim(), resultados);
+            try {
+				realizarBusqueda(tfTerm.getText().trim(), tfLocal.getText().trim(), resultados);
+			} catch (Exception e1) {
+				e1.printStackTrace();
+			}
         });
 
         btnPrev.setOnAction(e -> {
             if (page > 0) {
                 page--;
-                realizarBusqueda(tfTerm.getText().trim(), tfLocal.getText().trim(), resultados);
+                try {
+					realizarBusqueda(tfTerm.getText().trim(), tfLocal.getText().trim(), resultados);
+				} catch (Exception e1) {
+					e1.printStackTrace();
+				}
             }
         });
 
         btnNext.setOnAction(e -> {
             page++;
-            realizarBusqueda(tfTerm.getText().trim(), tfLocal.getText().trim(), resultados);
+            try {
+				realizarBusqueda(tfTerm.getText().trim(), tfLocal.getText().trim(), resultados);
+			} catch (Exception e1) {
+				e1.printStackTrace();
+			}
         });
 
         root.getChildren().addAll(titulo, tfTerm, tfLocal, btnBuscar, resultados, new ToolBar(btnPrev, btnNext));
     }
 
-    private void realizarBusqueda(String term, String localidad, ListView<String> resultados) {
+    private void realizarBusqueda(String term, String localidad, ListView<String> resultados) throws Exception {
         resultados.getItems().clear();
-        for (int i = 1; i <= pageSize; i++) {
-            int idx = page * pageSize + i;
-            String loc = (localidad == null || localidad.isEmpty()) ? "Varias localidades" : localidad;
-            resultados.getItems().add("Trabajador " + idx + " - " + term + " - " + loc + " - Tel: 351000" + idx);
+        if (term.isEmpty()) {
+            resultados.getItems().add("⚠ Ingrese un oficio para buscar.");
+            return;
+        }
+
+        try {
+            // Buscar el ID del oficio según el nombre (usamos un pequeño helper SQL interno)
+            int oficioId = obtenerOficioIdPorNombre(term);
+            if (oficioId == -1) {
+                resultados.getItems().add("❌ No se encontró el oficio: " + term);
+                return;
+            }
+
+            List<PerfilTrabajador> perfiles = perfilService.buscarPorOficio(oficioId, localidad, page, pageSize);
+
+            if (perfiles.isEmpty()) {
+                resultados.getItems().add("No se encontraron resultados para '" + term + "' en '" + localidad + "'");
+            } else {
+                for (PerfilTrabajador p : perfiles) {
+                    resultados.getItems().add(
+                            p.getNombreCompleto() + " - " + p.getLocalidad() +
+                            " - Tel: " + p.getTelefono() +
+                            " - Experiencia: " + p.getExperiencia()
+                    );
+                }
+            }
+
+        } catch (ServiceException ex) {
+            resultados.getItems().add("Error al buscar: " + ex.getMessage());
+            ex.printStackTrace();
         }
     }
 
-    public VBox getView() { return root; }
+    /**
+     * Busca el ID del oficio en la base de datos según su nombre.
+     */
+    private int obtenerOficioIdPorNombre(String nombre) {
+        String sql = "SELECT oficio_id FROM Oficio WHERE LOWER(nombre) = LOWER(?)";
+        try (var c = com.juntix.util.DBConnection.getConexion();
+             var ps = c.prepareStatement(sql)) {
+            ps.setString(1, nombre);
+            try (var rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt("oficio_id");
+            }
+        } catch (Exception e) {
+            System.err.println("Error buscando oficio_id: " + e.getMessage());
+        }
+        return -1;
+    }
+
+    public VBox getView() {
+        return root;
+    }
 }
