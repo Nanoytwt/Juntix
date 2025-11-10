@@ -14,7 +14,7 @@ import java.sql.PreparedStatement;
  */
 public class DBSeeder {
     public static void main(String[] args) {
-        try (Connection c = DBConnection.getConnection()) {
+        try (Connection c = DBConnection.getConexion()) {
             String hashCliente = PasswordUtil.generarHash("Cliente123!");
             String hashTrab = PasswordUtil.generarHash("Trabajador123!");
 

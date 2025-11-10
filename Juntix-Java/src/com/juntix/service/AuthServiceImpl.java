@@ -29,7 +29,8 @@ public class AuthServiceImpl implements IAuthService {
             Optional<Usuario> existe = usuarioDAO.findByEmail(email);
             if (existe.isPresent()) throw new ServiceException("Email ya registrado");
             String hash = PasswordUtil.generarHash(password);
-            Usuario u = new Usuario(email, hash, rol, telefono);
+            Usuario.Role rolEnum = Usuario.Role.valueOf(rol.toUpperCase());
+            Usuario u = new Usuario(email, hash, rolEnum, telefono);
             int id = usuarioDAO.create(u);
             u.setUsuarioId(id);
             return u;

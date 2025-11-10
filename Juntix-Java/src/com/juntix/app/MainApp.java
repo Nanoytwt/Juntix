@@ -4,6 +4,7 @@ import com.juntix.service.AuthServiceImpl;
 import com.juntix.service.IAuthService;
 import com.juntix.ui.LoginView;
 import com.juntix.ui.RegisterView;
+import com.juntix.util.DBConfig;
 import com.juntix.ui.DashboardView;
 import javafx.application.Application;
 import javafx.scene.Scene;
@@ -60,6 +61,8 @@ public class MainApp extends Application {
         mostrarLogin();
         primaryStage.setScene(scene);
         primaryStage.show();
+        System.out.println("Conectando a: " + DBConfig.getUrl());
+
     }
 
     private void mostrarLogin() {

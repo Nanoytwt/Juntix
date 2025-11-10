@@ -15,8 +15,8 @@ import java.util.Optional;
  */
 public class PerfilDAOImpl implements IPerfilDAO {
     @Override
-    public int upsert(PerfilTrabajador p) {
-        try (Connection c = DBConnection.getConnection()) {
+    public int upsert(PerfilTrabajador p) throws DataAccessException {
+        try (Connection c = DBConnection.getConexion()) {
             // Si existe perfil para usuario -> UPDATE, si no -> INSERT
             Optional<PerfilTrabajador> existente = findByUsuarioId(p.getUsuarioId());
             if (existente.isPresent()) {
@@ -61,9 +61,9 @@ public class PerfilDAOImpl implements IPerfilDAO {
     }
 
     @Override
-    public Optional<PerfilTrabajador> findByUsuarioId(int usuarioId) {
+    public Optional<PerfilTrabajador> findByUsuarioId(int usuarioId) throws DataAccessException {
         String sql = "SELECT * FROM PerfilTrabajador WHERE usuario_id = ? AND activo = TRUE";
-        try (Connection c = DBConnection.getConnection();
+        try (Connection c = DBConnection.getConexion();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, usuarioId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -79,9 +79,9 @@ public class PerfilDAOImpl implements IPerfilDAO {
     }
 
     @Override
-    public Optional<PerfilTrabajador> findById(int perfilId) {
+    public Optional<PerfilTrabajador> findById(int perfilId) throws DataAccessException {
         String sql = "SELECT * FROM PerfilTrabajador WHERE perfil_id = ? AND activo = TRUE";
-        try (Connection c = DBConnection.getConnection();
+        try (Connection c = DBConnection.getConexion();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, perfilId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -97,12 +97,12 @@ public class PerfilDAOImpl implements IPerfilDAO {
     }
 
     @Override
-    public List<PerfilTrabajador> searchByOficio(int oficioId, String localidad, int limit, int offset) {
+    public List<PerfilTrabajador> searchByOficio(int oficioId, String localidad, int limit, int offset) throws DataAccessException {
         List<PerfilTrabajador> lista = new ArrayList<>();
         String sql = "SELECT * FROM PerfilTrabajador WHERE oficio_id = ? AND visible = TRUE AND activo = TRUE"
                 + (localidad != null && !localidad.isEmpty() ? " AND localidad = ?" : "")
                 + " ORDER BY localidad, nombre_completo LIMIT ? OFFSET ?";
-        try (Connection c = DBConnection.getConnection();
+        try (Connection c = DBConnection.getConexion();
              PreparedStatement ps = c.prepareStatement(sql)) {
             int idx = 1;
             ps.setInt(idx++, oficioId);
@@ -123,9 +123,9 @@ public class PerfilDAOImpl implements IPerfilDAO {
     }
 
     @Override
-    public boolean softDeleteByUsuarioId(int usuarioId) {
+    public boolean softDeleteByUsuarioId(int usuarioId) throws DataAccessException {
         String sql = "UPDATE PerfilTrabajador SET activo = FALSE, visible = FALSE WHERE usuario_id = ?";
-        try (Connection c = DBConnection.getConnection();
+        try (Connection c = DBConnection.getConexion();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, usuarioId);
             int filas = ps.executeUpdate();

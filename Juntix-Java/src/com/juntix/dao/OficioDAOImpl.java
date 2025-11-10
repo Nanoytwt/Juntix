@@ -16,9 +16,9 @@ import java.util.Optional;
 public class OficioDAOImpl implements IOficioDAO {
 
     @Override
-    public Optional<Oficio> findById(int id) {
+    public Optional<Oficio> findById(int id) throws DataAccessException {
         String sql = "SELECT oficio_id, nombre FROM Oficio WHERE oficio_id = ?";
-        try (Connection c = DBConnection.getConnection();
+        try (Connection c = DBConnection.getConexion();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
@@ -36,9 +36,9 @@ public class OficioDAOImpl implements IOficioDAO {
     }
 
     @Override
-    public Optional<Oficio> findByName(String name) {
+    public Optional<Oficio> findByName(String name) throws DataAccessException {
         String sql = "SELECT oficio_id, nombre FROM Oficio WHERE nombre = ?";
-        try (Connection c = DBConnection.getConnection();
+        try (Connection c = DBConnection.getConexion();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setString(1, name);
             try (ResultSet rs = ps.executeQuery()) {
@@ -56,10 +56,10 @@ public class OficioDAOImpl implements IOficioDAO {
     }
 
     @Override
-    public List<Oficio> searchByName(String term) {
+    public List<Oficio> searchByName(String term) throws DataAccessException {
         List<Oficio> lista = new ArrayList<>();
         String sql = "SELECT oficio_id, nombre FROM Oficio WHERE nombre LIKE CONCAT('%', ?, '%') ORDER BY nombre";
-        try (Connection c = DBConnection.getConnection();
+        try (Connection c = DBConnection.getConexion();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setString(1, term);
             try (ResultSet rs = ps.executeQuery()) {
@@ -77,9 +77,9 @@ public class OficioDAOImpl implements IOficioDAO {
     }
 
     @Override
-    public int create(Oficio oficio) {
+    public int create(Oficio oficio) throws DataAccessException {
         String sql = "INSERT INTO Oficio(nombre) VALUES (?)";
-        try (Connection c = DBConnection.getConnection();
+        try (Connection c = DBConnection.getConexion();
              PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, oficio.getNombre());
             ps.executeUpdate();

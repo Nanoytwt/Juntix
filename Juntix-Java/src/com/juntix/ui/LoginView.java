@@ -15,6 +15,7 @@ import java.util.function.BiConsumer;
  */
 public class LoginView {
     private IAuthService authService;
+    // Se mantiene BiConsumer<Integer, String> para que MainApp (u otros consumidores) sigan recibiendo String como rol.
     private BiConsumer<Integer, String> onSuccess;
     private VBox root;
 
@@ -58,7 +59,8 @@ public class LoginView {
                 var usuario = authService.iniciarSesion(email, pass);
                 Alert ok = new Alert(Alert.AlertType.INFORMATION, "Inicio de sesión exitoso", ButtonType.OK);
                 ok.showAndWait();
-                if (onSuccess != null) onSuccess.accept(usuario.getUsuarioId(), usuario.getRol());
+                // Se pasa el rol como String para que coincida con BiConsumer<Integer, String>
+                if (onSuccess != null) onSuccess.accept(usuario.getUsuarioId(), usuario.getRol().name());
             } catch (ServiceException ex) {
                 Alert a = new Alert(Alert.AlertType.ERROR, ex.getMessage(), ButtonType.OK);
                 a.showAndWait();
